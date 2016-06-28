@@ -1,42 +1,57 @@
+"""
+
+"""
+
+from __future__ import print_function
+from six import string_types
+from six.moves import input  # pylint: disable=locally-disabled,redefined-builtin
+
 import cleaning
+
 
 class NAMESPACE:
     def __init__(self):
         self.functions = {}
         self.atomics = {}
         self.sorts = {}
-        self.quantMap = {"TEMP": 0}
-    def addCodeSort(self,name,inheritance = None):
-        if inheritance == None: inheritance = []
-        if not (isinstance(name,str) and isinstance(inheritance,list)):
-            print "ERROR: function addCodeSort takes arguments of the form, string, list of strings"
+        self.quant_map = {"TEMP": 0}
+
+    def add_code_sort(self, name, inheritance=None):
+        if inheritance is None:
+            inheritance = []
+        if not (isinstance(name, string_types) and isinstance(inheritance, list)):
+            print("ERROR: function addCodeSort takes arguments of the form, string, "
+                  "list of strings")
             return False
         for thing in inheritance:
-            if not thing in self.sorts.keys():
-                print "ERROR: sort "+thing+" is not previously defined"
+            if thing not in self.sorts.keys():
+                print("ERROR: sort " + thing + " is not previously defined")
                 return False
         if name in self.sorts.keys():
             return True
         self.sorts[name] = inheritance
         return True
-    def addTextSort(self,expression):
-        temp = expression.replace("("," ")
-        temp = temp.replace(")"," ")
-        temp = cleaning.stripWhiteSpace(temp)
-        temp = temp.replace("`","")
+
+    def add_text_sort(self, expression):
+        temp = expression.replace("(", " ")
+        temp = temp.replace(")", " ")
+        temp = cleaning.strip_white_space(temp)
+        temp = temp.replace("`", "")
         args = temp.split(",")
         if len(args) == 2:
-            self.addCodeSort(args[1])
+            self.add_code_sort(args[1])
         elif len(args) > 2:
-            self.addCodeSort(args[1],args[2:])
+            self.add_code_sort(args[1], args[2:])
         else:
-            print "ERROR: Cannot define the sort"
+            print("ERROR: Cannot define the sort")
             return False
-    def findAtomicType(self,name):
+
+    def find_atomic_type(self, name):
         if name in self.atomics.keys():
             return self.atomics[name]
-    def addCodeFunction(self,name,returnType,argsTypes):
-        item = [returnType,argsTypes]
+
+    def add_code_function(self, name, return_type, args_types):
+        item = [return_type, args_types]
         if name in self.functions.keys():
             if item in self.functions[name]:
                 pass
@@ -45,162 +60,173 @@ class NAMESPACE:
         else:
             self.functions[name] = [item]
         return True
-    def addTextFunction(self,expression):
-        temp = expression.replace("("," ")
-        temp = temp.replace(")"," ")
-        temp = cleaning.stripWhiteSpace(temp)
-        temp = temp.replace("`","")
+
+    def add_text_function(self, expression):
+        temp = expression.replace("(", " ")
+        temp = temp.replace(")", " ")
+        temp = cleaning.strip_white_space(temp)
+        temp = temp.replace("`", "")
         args = temp.split(",")
         if args[0].lower() == "typedef":
-            return self.addTextSort(expression)
+            return self.add_text_sort(expression)
         elif len(args) == 2:
-            return self.addTextAtomic(expression)
-        returnType = ""
-        funcName = ""
-        funcArgs = []
-        #Find the return type
+            return self.add_text_atomic(expression)
+        return_type = ""
+        func_name = ""
+        func_args = []
+        # Find the return type
         if args[0] in self.sorts.keys():
-            returnType = args[0]
+            return_type = args[0]
             args.remove(args[0])
-        #Find the function name
+        # Find the function name
         for arg in args:
-            if not arg in self.sorts.keys():
-                funcName = arg
+            if arg not in self.sorts.keys():
+                func_name = arg
                 args.remove(arg)
                 break
-        #Find the function args
+        # Find the function args
         for arg in args:
             if arg in self.sorts.keys():
-                funcArgs.append(arg)
-        #Error Checking
-        if returnType == "" or funcName == "" or funcArgs == []:
-            print "ERROR: The function prototype was not formatted correctly."
+                func_args.append(arg)
+        # Error Checking
+        if return_type == "" or func_name == "" or func_args == []:
+            print("ERROR: The function prototype was not formatted correctly.")
             return False
-        #Add the function
-        return self.addCodeFunction(funcName,returnType,funcArgs)
-    def addCodeAtomic(self,name,Type):
-        atomic = Type
+        # Add the function
+        return self.add_code_function(func_name, return_type, func_args)
+
+    def add_code_atomic(self, name, atomic):
         if name in self.atomics.keys():
             if atomic in self.atomics[name]:
                 return True
             else:
-                print "ERROR: item "+name+" was previously defined as an "+self.atomics[name]+", you cannot overload atomics."
+                print("ERROR: item " + name + " was previously defined as "
+                      "an " + self.atomics[name] + ", you cannot overload "
+                      "atomics.")
                 return False
         else:
             self.atomics[name] = atomic
         return True
-    def addTextAtomic(self,expression):
-        temp = expression.replace("("," ")
-        temp = temp.replace(")"," ")
-        temp = cleaning.stripWhiteSpace(temp)
-        temp = temp.replace("`","")
+
+    def add_text_atomic(self, expression):
+        temp = expression.replace("(", " ")
+        temp = temp.replace(")", " ")
+        temp = cleaning.strip_white_space(temp)
+        temp = temp.replace("`", "")
         args = temp.split(",")
-        returnType = ""
-        funcName = ""        
-        #Find the return type
+        return_type = ""
+        func_name = ""
+        # Find the return type
         for arg in args:
             if arg in self.sorts.keys():
-                returnType = arg
+                return_type = arg
                 args.remove(arg)
                 break
-        #Find the function name
+        # Find the function name
         for arg in args:
-            if not arg in self.sorts.keys():
-                funcName = arg
+            if arg not in self.sorts.keys():
+                func_name = arg
                 args.remove(arg)
                 break
-        return self.addCodeAtomic(funcName,returnType)
-    def addBasicDCEC(self):
-        #The Basic DCEC Sorts
-        self.addCodeSort("Object")
-        self.addCodeSort("Agent",["Object"])
-        self.addCodeSort("Self",["Object","Agent"])
-        self.addCodeSort("ActionType",["Object"])
-        self.addCodeSort("Event",["Object"])
-        self.addCodeSort("Action",["Object","Event"])
-        self.addCodeSort("Moment",["Object"])
-        self.addCodeSort("Boolean",["Object"])
-        self.addCodeSort("Fluent",["Object"])
-        self.addCodeSort("Numeric",["Object"])
-        self.addCodeSort("Set",["Object"])
-        #The Basic DCEC Modal Functions
-        self.addCodeFunction("C","Boolean",["Moment","Boolean"])
-        self.addCodeFunction("B","Boolean",["Agent","Moment","Boolean"])
-        self.addCodeFunction("K","Boolean",["Agent","Moment","Boolean"])
-        self.addCodeFunction("P","Boolean",["Agent","Moment","Boolean"])
-        self.addCodeFunction("I","Boolean",["Agent","Moment","Boolean"])
-        self.addCodeFunction("D","Boolean",["Agent","Moment","Boolean"])
-        self.addCodeFunction("S","Boolean",["Agent","Agent","Moment","Boolean"])
-        self.addCodeFunction("O","Boolean",["Agent","Moment","Boolean","Boolean"])
-        #Fluent Functions
-        self.addCodeFunction("action","Action",["Agent","ActionType"])
-        self.addCodeFunction("initially","Boolean",["Fluent"])
-        self.addCodeFunction("holds","Boolean",["Fluent","Moment"])
-        self.addCodeFunction("happens","Boolean",["Event","Moment"])
-        self.addCodeFunction("clipped","Boolean",["Moment","Fluent","Moment"])
-        self.addCodeFunction("initiates","Boolean",["Event","Fluent","Moment"])
-        self.addCodeFunction("terminates","Boolean",["Event","Fluent","Moment"])
-        self.addCodeFunction("prior","Boolean",["Moment","Moment"])
-        self.addCodeFunction("interval","Fluent",["Moment","Boolean"])
-        self.addCodeFunction("self","Self",["Agent"])
-        self.addCodeFunction("payoff","Numeric",["Agent","ActionType","Moment"])
-        #Logical Functions
-        self.addCodeFunction("implies","Boolean",["Boolean","Boolean"])
-        self.addCodeFunction("iff","Boolean",["Boolean","Boolean"])
-        self.addCodeFunction("not","Boolean",["Boolean"])
-        self.addCodeFunction("and","Boolean",["Boolean","Boolean"])
-        #Time Functions
-        self.addCodeFunction("lessOrEqual","Boolean",["Moment","Moment"])
-    def addBasicLogic(self):
-        #Logical Functions
-        self.addCodeFunction("or","Boolean",["Boolean","Boolean"])
-        self.addCodeFunction("xor","Boolean",["Boolean","Boolean"])
-    def addBasicNumerics(self):
-        #Numerical Functions
-        self.addCodeFunction("negate","Numeric",["Numeric"])
-        self.addCodeFunction("add","Numeric",["Numeric","Numeric"])
-        self.addCodeFunction("sub","Numeric",["Numeric","Numeric"])
-        self.addCodeFunction("multiply","Numeric",["Numeric","Numeric"])
-        self.addCodeFunction("divide","Numeric",["Numeric","Numeric"])
-        self.addCodeFunction("exponent","Numeric",["Numeric","Numeric"])
-        #Comparison Functions
-        self.addCodeFunction("greater","Boolean",["Numeric","Numeric"])
-        self.addCodeFunction("greaterOrEqual","Boolean",["Numeric","Numeric"])
-        self.addCodeFunction("less","Boolean",["Numeric","Numeric"])
-        self.addCodeFunction("lessOrEqual","Boolean",["Numeric","Numeric"])
-        self.addCodeFunction("equals","Boolean",["Numeric","Numeric"])        
-    def noConflict(self,type1,type2,level):
-        #print type1,type2
+        return self.add_code_atomic(func_name, return_type)
+
+    def add_basic_dcec(self):
+        # The Basic DCEC Sorts
+        self.add_code_sort("Object")
+        self.add_code_sort("Agent", ["Object"])
+        self.add_code_sort("Self", ["Object", "Agent"])
+        self.add_code_sort("ActionType", ["Object"])
+        self.add_code_sort("Event", ["Object"])
+        self.add_code_sort("Action", ["Object", "Event"])
+        self.add_code_sort("Moment", ["Object"])
+        self.add_code_sort("Boolean", ["Object"])
+        self.add_code_sort("Fluent", ["Object"])
+        self.add_code_sort("Numeric", ["Object"])
+        self.add_code_sort("Set", ["Object"])
+
+        # The Basic DCEC Modal Functions
+        self.add_code_function("C", "Boolean", ["Moment", "Boolean"])
+        self.add_code_function("B", "Boolean", ["Agent", "Moment", "Boolean"])
+        self.add_code_function("K", "Boolean", ["Agent", "Moment", "Boolean"])
+        self.add_code_function("P", "Boolean", ["Agent", "Moment", "Boolean"])
+        self.add_code_function("I", "Boolean", ["Agent", "Moment", "Boolean"])
+        self.add_code_function("D", "Boolean", ["Agent", "Moment", "Boolean"])
+        self.add_code_function("S", "Boolean", ["Agent", "Agent", "Moment", "Boolean"])
+        self.add_code_function("O", "Boolean", ["Agent", "Moment", "Boolean", "Boolean"])
+
+        # Fluent Functions
+        self.add_code_function("action", "Action", ["Agent", "ActionType"])
+        self.add_code_function("initially", "Boolean", ["Fluent"])
+        self.add_code_function("holds", "Boolean", ["Fluent", "Moment"])
+        self.add_code_function("happens", "Boolean", ["Event", "Moment"])
+        self.add_code_function("clipped", "Boolean", ["Moment", "Fluent", "Moment"])
+        self.add_code_function("initiates", "Boolean", ["Event", "Fluent", "Moment"])
+        self.add_code_function("terminates", "Boolean", ["Event", "Fluent", "Moment"])
+        self.add_code_function("prior", "Boolean", ["Moment", "Moment"])
+        self.add_code_function("interval", "Fluent", ["Moment", "Boolean"])
+        self.add_code_function("self", "Self", ["Agent"])
+        self.add_code_function("payoff", "Numeric", ["Agent", "ActionType", "Moment"])
+
+        # Logical Functions
+        self.add_code_function("implies", "Boolean", ["Boolean", "Boolean"])
+        self.add_code_function("iff", "Boolean", ["Boolean", "Boolean"])
+        self.add_code_function("not", "Boolean", ["Boolean"])
+        self.add_code_function("and", "Boolean", ["Boolean", "Boolean"])
+
+        # Time Functions
+        self.add_code_function("lessOrEqual", "Boolean", ["Moment", "Moment"])
+
+    def add_basic_logic(self):
+        # Logical Functions
+        self.add_code_function("or", "Boolean", ["Boolean", "Boolean"])
+        self.add_code_function("xor", "Boolean", ["Boolean", "Boolean"])
+
+    def add_basic_numerics(self):
+        # Numerical Functions
+        self.add_code_function("negate", "Numeric", ["Numeric"])
+        self.add_code_function("add", "Numeric", ["Numeric", "Numeric"])
+        self.add_code_function("sub", "Numeric", ["Numeric", "Numeric"])
+        self.add_code_function("multiply", "Numeric", ["Numeric", "Numeric"])
+        self.add_code_function("divide", "Numeric", ["Numeric", "Numeric"])
+        self.add_code_function("exponent", "Numeric", ["Numeric", "Numeric"])
+
+        # Comparison Functions
+        self.add_code_function("greater", "Boolean", ["Numeric", "Numeric"])
+        self.add_code_function("greaterOrEqual", "Boolean", ["Numeric", "Numeric"])
+        self.add_code_function("less", "Boolean", ["Numeric", "Numeric"])
+        self.add_code_function("lessOrEqual", "Boolean", ["Numeric", "Numeric"])
+        self.add_code_function("equals", "Boolean", ["Numeric", "Numeric"])
+
+    def no_conflict(self, type1, type2, level):
         if type1 == "?":
-            return (True,level)
+            return True, level
         elif type1 == type2:
-            return (True,level)
+            return True, level
         elif type2 in self.sorts[type1]:
-            return (True,level+1)
+            return True, level + 1
         else:
             returnlist = []
-            for x in self.sorts[type1]:
-                recurseReturn = self.noConflict(x,type2,level+1)
-                if recurseReturn[0]:
-                    returnlist.append([recurseReturn[1]])
+            for i in self.sorts[type1]:
+                recurse_return = self.no_conflict(i, type2, level + 1)
+                if recurse_return[0]:
+                    returnlist.append([recurse_return[1]])
             if len(returnlist) > 0:
-                return (True,min(returnlist)[0])
+                return True, min(returnlist)[0]
             else:
-                return (False,level)
-        return (False,level)
-    def printNAMESPACE(self):
+                return False, level
+
+    def print_namespace(self):
         for item in self.sorts.keys():
-            print item,self.sorts[item]
+            print(item, self.sorts[item])
         for item in self.functions:
-            print item,self.functions[item]
+            print(item, self.functions[item])
         for item in self.atomics:
-            print item,self.atomics[item]
-        
+            print(item, self.atomics[item])
 
 
 if __name__ == "__main__":
-    this = NAMESPACE()
-    expression = raw_input("Enter Prototype: ")
-    this.addTextFunction(expression)
-    this.addBasicDCEC()
-    this.printNAMESPACE()
+    THIS = NAMESPACE()
+    EXPRESSION = input("Enter Prototype: ")
+    THIS.add_text_function(EXPRESSION)
+    THIS.add_basic_dcec()
+    THIS.print_namespace()

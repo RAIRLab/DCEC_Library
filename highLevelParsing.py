@@ -1,15 +1,20 @@
+from __future__ import print_function
+from six import string_types
+from six.moves import input  # pylint: disable=locally-disabled,redefined-builtin
+
 import prototypes
 import cleaning
-import random
+
 
 class Token:
-    def __init__(self,funcname,args):
+    def __init__(self, funcname, args):
         self.funcName = funcname
         self.args = args
         self.depth = ""
         self.width = ""
         self.Sexpression = ""
         self.Fexpression = ""
+
     def depthOf(self):
         if self.depth != "":
             return self.depth
@@ -22,6 +27,7 @@ class Token:
         else:
             self.depth = 1+max([x.depthOf() for x in temp]) 
         return self.depth
+
     def widthOf(self):
         if self.width != "":
             return self.width
@@ -33,6 +39,7 @@ class Token:
                 temp += arg.widthOf()
         self.width = temp
         return self.width
+
     def createSExpression(self):
         if not self.Sexpression == "":
             return self.Sexpression
@@ -46,6 +53,7 @@ class Token:
         self.Sexpression = self.Sexpression.strip()
         self.Sexpression += ")"
         return self.Sexpression
+
     def createFExpression(self):
         if not self.Fexpression == "":
             return self.Fexpression
@@ -58,11 +66,13 @@ class Token:
                 self.Fexpression += arg.Fexpression+","
         self.Fexpression = self.Fexpression.strip(",")
         self.Fexpression += ")"
-        return self.Fexpression 
+        return self.Fexpression
+
     def printTree(self):
         self.createSExpression()
         self.createFExpression()
-        print self.Fexpression
+        print(self.Fexpression)
+
 
 def removeComments(expression):
     index = expression.find(";")
@@ -71,13 +81,14 @@ def removeComments(expression):
     if len(expression) == 0:
         expression = ""
     return expression
-    
+
+
 def functorizeSymbols(expression):
-    '''
+    """
     This function replaces all symbols with the appropreate internal funciton name.
     Some symbols are left untouched, these symbols have multiple interpretations in the DCEC syntax.
     For example, the symbol * can represent both multiplication and the self operator.
-    '''
+    """
     symbols = ["^","*","/","+","<->","->","-","&","|","~",">=","==","<=","===","=",">","<",]
     symbolMap = {
         "^": "exponent",
@@ -100,15 +111,16 @@ def functorizeSymbols(expression):
     }
     returner = expression
     for symbol in symbols:
-        returner = returner.replace(symbol," "+symbolMap[symbol]+" ")
+        returner = returner.replace(symbol, " " + symbolMap[symbol] + " ")
     returner = returner.replace("( ","(")
     return returner
 
+
 def replaceSynonyms(args):
-    '''
+    """
     These are some common spelling errors that users demand the parser takes
     care of, even though it increases "shot-in-foot" syndrome.
-    '''
+    """
     synonymMap = {
         "ifAndOnlyIf": "iff",
         "if": "implies",
@@ -120,15 +132,16 @@ def replaceSynonyms(args):
     }
     for arg in range(0,len(args)):
         if args[arg] in synonymMap.keys():
-            print "WARNING: replaced the common mispelling "+args[arg]+" with the correct name of "+synonymMap[args[arg]]
+            print("WARNING: replaced the common mispelling " + args[arg] + " with the correct name of " +synonymMap[args[arg]])
             args[arg] = synonymMap[args[arg]]
     return
 
-def prefixLogicalFunctions(args,addAtomics):
-    '''
+
+def prefixLogicalFunctions(args, addAtomics):
+    """
     This function turns infix notation into prefix notation. It assumes standard
     logical order of operations.
-    '''
+    """
     logicKeywords = ["not","and","or","xor","implies","iff"]
     #Checks for infix notation
     if len(args) < 3:
@@ -139,7 +152,7 @@ def prefixLogicalFunctions(args,addAtomics):
     #This is a very common error. Order of operations really fucks with the parser, especially because it needs to interpret both S and F notations. Because of this, operations are read left-to-right throughout the parser.
     for arg in range(0,len(args)):
         if args[arg] == "not" and arg+2 < len(args) and not args[arg+1] in logicKeywords:
-            print "WARNING: ambiguous not statement. This parser assumes standard order of logical operations. Please use prefix notation or parentheses to resolve this ambiguity."
+            print("WARNING: ambiguous not statement. This parser assumes standard order of logical operations. Please use prefix notation or parentheses to resolve this ambiguity.")
     for word in logicKeywords:
         index = 0
         while word in args:
@@ -176,7 +189,8 @@ def prefixLogicalFunctions(args,addAtomics):
             args[in1] = newToken
     return args
 
-def prefixEMDAS(args,addAtomics):
+
+def prefixEMDAS(args, addAtomics):
     """
     This function turns infix notation into a tokenized prefix notation using the standard PEMDAS order of operations.
     """
@@ -223,21 +237,21 @@ def prefixEMDAS(args,addAtomics):
                 args = args[:in1]+args[in2:]
                 args[in1] = newToken
     return args
-            
 
-def assignTypes(args,namespace,addAtomics,addFunctions):
-    '''
+
+def assignTypes(args, namespace, addAtomics, addFunctions):
+    """
     This function assigns sorts to atomics, tokens, and inline defined functions based
     on the sorts keywords.
-    '''
+    """
     #Add the types to the namespace
     for arg in range(0,len(args)):
         if args[arg] in namespace.sorts.keys():
             if arg+1 == len(args):
-                print "ERROR: Cannot find something to attach the sort \""+args[arg]+"\". Cannot overload sorts."
+                print("ERROR: Cannot find something to attach the sort \""+args[arg]+"\". Cannot overload sorts.")
                 return False
             elif args[arg+1] in namespace.sorts.keys() or args[arg+1] in namespace.functions.keys():
-                print "ERROR: Cannot assign inline types to basicTypes, keywords, or function names"
+                print("ERROR: Cannot assign inline types to basicTypes, keywords, or function names")
                 return False
             elif isinstance(args[arg+1],Token):
                 name = args[arg+1].funcName
@@ -248,7 +262,7 @@ def assignTypes(args,namespace,addAtomics,addFunctions):
                     elif x in addAtomics.keys():
                         inargs.append(addAtomics[x][0])
                     else:
-                        print "ERROR: token \""+str(x)+"\" has an unknown type. Please type it."
+                        print("ERROR: token \""+str(x)+"\" has an unknown type. Please type it.")
                         return False
                 if name in addFunctions.keys():
                     for item in addFunctions[name]:
@@ -258,7 +272,7 @@ def assignTypes(args,namespace,addAtomics,addFunctions):
                             elif item[0] == args[arg]:
                                 continue
                             else:
-                                print "ERROR: A function cannot have two different returntypes"
+                                print("ERROR: A function cannot have two different returntypes")
                                 return False
                         else:
                             newItem = [name,inargs]
@@ -278,13 +292,14 @@ def assignTypes(args,namespace,addAtomics,addFunctions):
             counter += 1
     return True
 
-def distinguishFunctions(args,namespace,addAtomics,addFunctions):
-    '''
+
+def distinguishFunctions(args, namespace, addAtomics, addFunctions):
+    """
     Because several symbols in the DCEC syntax can mean more than one thing, this 
     function tires to resolve that ambiguity by looking at various sorts.
     Hopefully, users do not use these symbols and instead use the unambiguous names
     instead.
-    '''
+    """
     if len(args) == 1:
         return True
     for arg in range(0,len(args)):
@@ -302,7 +317,7 @@ def distinguishFunctions(args,namespace,addAtomics,addFunctions):
                 elif namespace.atomics[args[arg-1]] == "Numeric":
                     args[arg] = "multiply"
                 else:
-                    print "ERROR: keyword * does not take atomic arguments of type: "+namespace.atomics[args[arg-1]]
+                    print("ERROR: keyword * does not take atomic arguments of type: "+namespace.atomics[args[arg-1]])
                     return False
             elif args[arg-1] in addAtomics.keys():
                 if addAtomics[args[arg-1]][0] == "Agent":
@@ -311,10 +326,10 @@ def distinguishFunctions(args,namespace,addAtomics,addFunctions):
                 elif addAtomics[args[arg-1]][0] == "Numeric":
                     args[arg] = "multiply"
                 else:
-                    print "ERROR: keyword * does not take atomic arguments of type: "+addAtomics[args[arg-1]][0]
+                    print("ERROR: keyword * does not take atomic arguments of type: "+addAtomics[args[arg-1]][0])
                     return False
             else:
-                print "ERROR: ambiguous keyword * can be either self or multiply, please set the types of your atomics and use parentheses."
+                print("ERROR: ambiguous keyword * can be either self or multiply, please set the types of your atomics and use parentheses.")
                 return False
         if args[arg] == "-":
             if arg == 0:
@@ -324,7 +339,7 @@ def distinguishFunctions(args,namespace,addAtomics,addFunctions):
                     args[arg] = "negate"
                 elif len(args) > arg+1 and args[arg+1] in namespace.atomics.keys():
                     if namespace.atomics[args[arg+1]] != "Numeric":
-                        print "ERROR: - keyword does not take "+namespace.atomics[args[arg+1]]+" arguments."
+                        print("ERROR: - keyword does not take "+namespace.atomics[args[arg+1]]+" arguments.")
                         return False
                     else:
                         args[arg] = "sub"
@@ -333,7 +348,7 @@ def distinguishFunctions(args,namespace,addAtomics,addFunctions):
                     args[arg] = "negate"
                 elif len(args) > arg+1 and args[arg+1] in addAtomics.keys():
                     if addAtomics[args[arg+1]][0] != "Numeric":
-                        print "ERROR: - keyword does not take "+addAtomics[args[arg+1]][0]+" arguments."
+                        print("ERROR: - keyword does not take "+addAtomics[args[arg+1]][0]+" arguments.")
                         return False
                     else:
                         args[arg] = "sub"                
@@ -342,7 +357,7 @@ def distinguishFunctions(args,namespace,addAtomics,addFunctions):
             elif args[arg-1] in addFunctions.keys():
                 args[arg] = "negate"
             else:
-                print "ERROR: keyword - can be either sub or negate, please add types, or use the sub or negate keywords"
+                print("ERROR: keyword - can be either sub or negate, please add types, or use the sub or negate keywords")
                 return False
         if args[arg] == "&":
             if arg+1<len(args) and args[arg+1] in namespace.atomics.keys():
@@ -350,19 +365,19 @@ def distinguishFunctions(args,namespace,addAtomics,addFunctions):
                     args[arg] = "and"
                 elif namespace.atomics[args[arg+1]] == "Set":
                     args[arg] = "union"
-                else:   
-                    print "ERROR: keyword & does not take "+namespace.atomics[args[arg+1]]+" arguments"
+                else:
+                    print("ERROR: keyword & does not take "+namespace.atomics[args[arg+1]]+" arguments")
                     return False
             elif arg+1<len(args) and args[arg+1] in addAtomics.keys():
                 if addAtomics[args[arg+1]][0] == "Boolean":
                     args[arg] = "and"
                 elif addAtomics[args[arg+1]][0] == "Set":
                     args[arg] = "union"
-                else:   
-                    print "ERROR: keyword & does not take "+addAtomics[args[arg+1]][0]+" arguments"
+                else:
+                    print("ERROR: keyword & does not take "+addAtomics[args[arg+1]][0]+" arguments")
                     return False
             else:
-                print "ERROR: keyword & can be either union or and, please add types, or use the and or union keyword."
+                print("ERROR: keyword & can be either union or and, please add types, or use the and or union keyword.")
                 return False
         if args[arg] == "|":
             if arg+1<len(args) and args[arg+1] in namespace.atomics.keys():
@@ -371,7 +386,7 @@ def distinguishFunctions(args,namespace,addAtomics,addFunctions):
                 elif namespace.atomics[args[arg+1]] == "Set":
                     args[arg] = "intersection"
                 else:   
-                    print "ERROR: keyword | does not take "+namespace.atomics[args[arg+1]]+" arguments"
+                    print("ERROR: keyword | does not take "+namespace.atomics[args[arg+1]]+" arguments")
                     return False
             elif arg+1<len(args) and args[arg+1] in addAtomics.keys():
                 if addAtomics[args[arg+1]][0] == "Boolean":
@@ -379,36 +394,39 @@ def distinguishFunctions(args,namespace,addAtomics,addFunctions):
                 elif addAtomics[args[arg+1]][0] == "Set":
                     args[arg] = "intersection"
                 else:
-                    print "ERROR: keyword | does not take "+addAtomics[args[arg+1]][0]+" arguments"
+                    print("ERROR: keyword | does not take "+addAtomics[args[arg+1]][0]+" arguments")
                     return False
             else:
-                print "ERROR: keyword | can be either union or and, please add types, or use the or or intersect keyword."
+                print("ERROR: keyword | can be either union or and, please add types, or use the or or intersect keyword.")
                 return False
     return True
 
-def checkPrenex(args,addQuants):
+
+def checkPrenex(args, addQuants):
     for arg in args:
         if arg in addQuants.keys() and not 'QUANT' in arg:
-            print "WARNING: not using prenex form. This may cause an error if improperly handled. Use prenex form and make sure that your quantifiers are unique."
+            print("WARNING: not using prenex form. This may cause an error if improperly handled. Use prenex form and make sure that your quantifiers are unique.")
+
 
 def nextInternal(namespace):
-    if not "TEMP" in namespace.quantMap.keys():
-        namespace.quantMap["TEMP"] = 0
+    if "TEMP" not in namespace.quant_map.keys():
+        namespace.quant_map["TEMP"] = 0
         nextnumber = 0
     else:
-        nextnumber = namespace.quantMap["TEMP"]
-        namespace.quantMap["TEMP"] += 1
+        nextnumber = namespace.quant_map["TEMP"]
+        namespace.quant_map["TEMP"] += 1
     nextinternal = 'QUANT'+str(nextnumber)
     if nextinternal in namespace.atomics:
         return nextInternal(namespace)
     else:
         return nextinternal
 
-def popQuantifiers(args,highlevel,sublevel,namespace,quantifiers,addQuants,addAtomics,addFunctions):
-    '''
+
+def popQuantifiers(args, highlevel, sublevel, namespace, quantifiers, addQuants, addAtomics, addFunctions):
+    """
     This function removes all quantifiers from the statement, and replaces quantified variables
     with thier internal representations. These representations are then stored in the namespace atomics map.
-    '''
+    """
     removelist = []
     place = 0
     for arg in range(0,len(args)):
@@ -474,13 +492,14 @@ def popQuantifiers(args,highlevel,sublevel,namespace,quantifiers,addQuants,addAt
                         break
     #Remove quantifiers from the arguments
     args = [i for j, i in enumerate(args) if j not in removelist]
-    return args,place
+    return args, place
+
 
 def assignArgs(funcName,args,namespace,addAtomics,addFunctions):
-    '''
+    """
     This function attempts to assign sorts to the current function and all of its arguments.
     It also attempts to differentiate between different overloaded functions. 
-    '''
+    """
     #Fluents are weird, this is as good as it gets
     fluents = ["action","initially","holds","happens","clipped","initiates","terminates","prior","interval","self","payoff"]
     exceptions = []
@@ -531,7 +550,7 @@ def assignArgs(funcName,args,namespace,addAtomics,addFunctions):
             levels = []
             if not len(item[1]) <= len(realTypes): continue
             for arg in range(0,len(item[1])):
-                returnthing = namespace.noConflict(realTypes[arg],item[1][arg],0)
+                returnthing = namespace.no_conflict(realTypes[arg], item[1][arg], 0)
                 if returnthing[0]:
                     levels.append(returnthing[1])
                 elif item[1][arg] == "Fluent": #Fluents are special, they can take bools, ect.
@@ -551,7 +570,7 @@ def assignArgs(funcName,args,namespace,addAtomics,addFunctions):
             levels = []
             if not len(item[1]) <= len(realTypes): continue
             for arg in range(0,len(item[1])):
-                returnthing = namespace.noConflict(realTypes[arg],item[1][arg],0)
+                returnthing = namespace.no_conflict(realTypes[arg], item[1][arg], 0)
                 if returnthing[0]:
                     levels.append(returnthing[1])
                 elif item[1][arg] == "Fluent": #Fluents are special, they can take bools, ect.
@@ -571,29 +590,29 @@ def assignArgs(funcName,args,namespace,addAtomics,addFunctions):
         if len(sortedItems[0][1]) == len(sortedItems[1][1]):
             sortedItems = sorted(validItems,key=lambda item: sum(item[1]))
             if sum(sortedItems[0][1]) == sum(sortedItems[1][1]):
-                print "ERROR: more than one possible interpretation for function \""+funcName+"\". Please type your atomics."
-                print "   The interpretations are:"
+                print("ERROR: more than one possible interpretation for function \""+funcName+"\". Please type your atomics.")
+                print("   The interpretations are:")
                 for x in sortedItems:
-                    print "interpretation: ",x[0]," Constraining factor: ",sum(x[1])
-                print "   you gave:"
-                print "  ",realTypes
+                    print("interpretation: ", x[0], " Constraining factor: ", sum(x[1]))
+                print("   you gave:")
+                print("  ", realTypes)
                 return False,[]
             else:
                 validItems = [sortedItems[0]]
         else:
             validItems = [sortedItems[0]]
     elif len(validItems) == 0:
-        print "ERROR: the function named \""+funcName+"\" does not take arguments of the type provided. You cannot overload inline. Use prototypes."
-        print "   the possible inputs for \""+funcName+"\" are:"
+        print("ERROR: the function named \""+funcName+"\" does not take arguments of the type provided. You cannot overload inline. Use prototypes.")
+        print("   the possible inputs for \""+funcName+"\" are:")
         #Print the possible interpretations
         if funcName in namespace.functions.keys():
             for x in namespace.functions[funcName]:
-                print "  ",x[1]
+                print("  ", x[1])
         if funcName in addFunctions.keys():
             for x in addFunctions[funcName]:
-                print "  ",x[1]
-        print "   you gave:"
-        print "  ",realTypes
+                print("  ", x[1])
+        print("   you gave:")
+        print("  ", realTypes)
         #Throw an error
         return False,[]
     #Assign Types
@@ -609,18 +628,18 @@ def assignArgs(funcName,args,namespace,addAtomics,addFunctions):
     #Remove used args from list:
     returnArgs = [newToken]
     returnArgs += tempArgs[len(validItems[0][1]):]
-    return returnArgs,addAtomics[newToken][0]
+    return returnArgs, addAtomics[newToken][0]
             
 
-def TokenTree(expression,namespace,quantifiers,addQuants,addAtomics,addFunctions):
-    '''
+def TokenTree(expression, namespace, quantifiers, addQuants, addAtomics, addFunctions):
+    """
     This is the meat and potatoes function of the parser. It pulls together all of the
     other utility functions and decides which words are function names, which are
     arguments to the functions, and which are special keywords that define sorts, ect.
     Most of the complexity of the parser comes from dealing with overloaded and inline
     functions. Unfortunately, the users demand these features, so the parser must make
     it easy to shoot oneself in the foot with it.
-    '''
+    """
     #Strip the outer parens
     temp = expression[1:-1].strip(",")
     #check for an empty string
@@ -634,7 +653,7 @@ def TokenTree(expression,namespace,quantifiers,addQuants,addAtomics,addFunctions
         if temp[index] == "(":
             level += 1
             if(level == 1):
-                sublevel.append([index,cleaning.getMatchingCloseParen(temp,index)+1])
+                sublevel.append([index, cleaning.get_matching_close_paren(temp, index) + 1])
             continue
         if temp[index] == ")":
             level -= 1
@@ -649,29 +668,32 @@ def TokenTree(expression,namespace,quantifiers,addQuants,addAtomics,addFunctions
     if isinstance(args,bool):
         return False
     #Rip out quantified statements
-    args,offset = popQuantifiers(args,temp,sublevel,namespace,quantifiers,addQuants,addAtomics,addFunctions)
+    args,offset = popQuantifiers(args, temp, sublevel, namespace, quantifiers, addQuants, addAtomics, addFunctions)
     place += offset
     if isinstance(args,bool):
         return False
     #Tokens can be nested, so this recurses thorough the tree
     for index in range(0,len(args)):
         if args[index] == "":
-            args[index] = TokenTree(temp[sublevel[place][0]:sublevel[place][1]],namespace,quantifiers,addQuants,addAtomics,addFunctions)
+            args[index] = TokenTree(temp[sublevel[place][0]:sublevel[place][1]], namespace, quantifiers, addQuants, addAtomics, addFunctions)
             if not args[index]:
                 return False
             place += 1
     #Assign inline types
-    if not assignTypes(args,namespace,addAtomics,addFunctions): return False  
+    if not assignTypes(args, namespace, addAtomics, addFunctions):
+        return False
     #Distinguish inbetween ambiguous symbols
-    if not distinguishFunctions(args,namespace,addAtomics,addFunctions): return False
+    if not distinguishFunctions(args, namespace, addAtomics, addFunctions):
+        return False
     #Check for prenex form
-    checkPrenex(args,addQuants)
+    checkPrenex(args, addQuants)
     #Prefix inline logical functions
-    args = prefixLogicalFunctions(args,addAtomics)
+    args = prefixLogicalFunctions(args, addAtomics)
     #Prefix inline numeric functions
-    args = prefixEMDAS(args,addAtomics)
+    args = prefixEMDAS(args, addAtomics)
     #If this is a basic argument, it does not need to be tokenized
-    if len(args) == 1: return args[0]
+    if len(args) == 1:
+        return args[0]
     #Otherwise it does, more than one arg means one is a function name and others are args
     while len(args) > 1:
         #Find the function name. If a function is known this will find it.
@@ -688,7 +710,7 @@ def TokenTree(expression,namespace,quantifiers,addQuants,addAtomics,addFunctions
             primaryToken = args[0]
             #Check if there is no function name. This will happen in postfix notation or if the user is bad. We do not support this
             if isinstance(primaryToken,Token):
-                print "ERROR: \""+primaryToken.createSExpression()+"\" is not a valid function name. Postfix notation is not supported when defining inline functions."
+                print("ERROR: \""+primaryToken.createSExpression()+"\" is not a valid function name. Postfix notation is not supported when defining inline functions.")
                 return False
             #Attempt to define the inline function
             subTypes = []
@@ -698,131 +720,131 @@ def TokenTree(expression,namespace,quantifiers,addQuants,addAtomics,addFunctions
                 elif arg in addAtomics.keys():
                     subTypes.append(addAtomics[arg][0])
                 else:
-                    print "ERROR: token \""+str(arg)+"\" is of an unknown type. Please type it."
+                    print("ERROR: token \""+str(arg)+"\" is of an unknown type. Please type it.")
                     return False
             newToken = Token(primaryToken,args[1:])
             if primaryToken in addFunctions.keys():
                 #This is a very common error, but unfortunately cannot be let go without a warning. Inline functions need to be defined outside of the parentheses, but most people are too lazy. However, some people might forget a paren or name or something which would lead to the same syntax as the previous case, but unintentionally. This makes this conditional ambiguous, but because the alternative results in an error, the parser will assume that the user meant for this to happen.
                 if primaryToken in addAtomics.keys():
-                    addFunctions[primaryToken].append([addAtomics[primaryToken][0],subTypes])
-                    print "WARNING: ambiguity in parsing. Assuming that the inline function \""+primaryToken+"\" has returntype of "+addAtomics[primaryToken][0]+". Please place inline return type definitions outside of the function definition, or use prototypes."
+                    addFunctions[primaryToken].append([addAtomics[primaryToken][0], subTypes])
+                    print("WARNING: ambiguity in parsing. Assuming that the inline function \""+primaryToken+"\" has returntype of "+addAtomics[primaryToken][0]+". Please place inline return type definitions outside of the function definition, or use prototypes.")
                     del addAtomics[primaryToken]
                 else:
                     addFunctions[primaryToken].append(["?",subTypes])
             #This is a very common error, but unfortunately cannot be let go without a warning. Inline functions need to be defined outside of the parentheses, but most people are too lazy. However, some people might forget a paren or name or something which would lead to the same syntax as the previous case, but unintentionally. This makes this conditional ambiguous, but because the alternative results in an error, the parser will assume that the user meant for this to happen.
             elif primaryToken in addAtomics.keys():
-                addFunctions[primaryToken] = [[addAtomics[primaryToken][0],subTypes]]
-                print "WARNING: ambiguity in parsing. Assuming that the inline function \""+primaryToken+"\" has returntype of "+addAtomics[primaryToken][0]+". Please place inline return type definitions outside of the function definition, or use prototypes."
+                addFunctions[primaryToken] = [[addAtomics[primaryToken][0], subTypes]]
+                print("WARNING: ambiguity in parsing. Assuming that the inline function \""+primaryToken+"\" has returntype of "+addAtomics[primaryToken][0]+". Please place inline return type definitions outside of the function definition, or use prototypes.")
                 del addAtomics[primaryToken]
             else:
                 addFunctions[primaryToken] = [["?",subTypes]]
             args = [newToken]
         #If a primary function is found, find the arguments and tokenize them
         else:
-            returnArgs,validItems = assignArgs(primaryToken,args,namespace,addAtomics,addFunctions)
+            returnArgs, validItems = assignArgs(primaryToken,args,namespace,addAtomics,addFunctions)
             if not returnArgs:
                 return False
             return returnArgs[0]
     if len(args) == 1:
         return args[0]
     else:
-        print "ERROR: Unspecified error, something went wrong"
+        print("ERROR: Unspecified error, something went wrong")
         return False
 
-def tokenizeQuantifiers(tokenTree,quantifiers):
-    '''
+def tokenizeQuantifiers(tokenTree, quantifiers):
+    """
     Quantifiers are tokenized last, because they need to be written in prenex form
     to work in the prover.
-    '''
+    """
     #Going backwards to perserve the order of quantifiers
     place = len(quantifiers)-2
     temp = tokenTree
     while place >= 0:
-        temp = Token(quantifiers[place],[quantifiers[place+1],temp])
+        temp = Token(quantifiers[place], [quantifiers[place+1],temp])
         place -= 2
     return temp
 
-def tokenizeRandomDCEC(expression,namespace = ""):
-    '''
+def tokenizeRandomDCEC(expression, namespace=None):
+    """
     This function creates a token representation of a random DCEC statement.
     It returns the token as well as sorts of new atomics and functions.
-    '''
+    """
     #Default DCEC Functions
-    if namespace == "":
+    if namespace is None:
         namespace = prototypes.NAMESPACE()
-        namespace.addBasicDCEC()
+        namespace.add_basic_dcec()
     else:
         namespace = namespace
     #Remove Comments
     temp = removeComments(expression)
     #Check for an empty string
     if temp == "()":
-        return ("",{},{},{})
+        return "", {}, {}, {}
     #Check for a parentheses mismatch error
-    if not cleaning.checkParens(expression):
-        print "ERROR: parentheses mismatch error."
-        return (False,False,False,False)
+    if not cleaning.check_parens(expression):
+        print("ERROR: parentheses mismatch error.")
+        return False, False, False, False
     #Make symbols into functions
     temp = functorizeSymbols(temp)
     #Strip comments
-    temp = cleaning.stripComments(temp)
+    temp = cleaning.strip_comments(temp)
     #Strip whitespace so you can do the rest of the parsing
-    temp = cleaning.stripWhiteSpace(temp)
+    temp = cleaning.strip_white_space(temp)
     #Tuck the functions inside thier parentheses
-    temp = cleaning.tuckFunctions(temp)
+    temp = cleaning.tuck_functions(temp)
     #Strip whitespace again
-    temp = cleaning.stripWhiteSpace(temp)
+    temp = cleaning.strip_white_space(temp)
     #Consolidate Parentheses
-    temp = cleaning.consolidateParens(temp)
+    temp = cleaning.consolidate_parens(temp)
     quantifiers = []
     #These are the tokens that should be added to the namespace
     addAtomics = {}
     addFunctions = {}
     addQuants = {}
-    returnToken = TokenTree(temp,namespace,quantifiers,addQuants,addAtomics,addFunctions)
+    returnToken = TokenTree(temp, namespace, quantifiers, addQuants, addAtomics, addFunctions)
     #check for errors that occur in the lower level
-    if isinstance(returnToken,bool) and returnToken == False:
-        return (False,False,False,False)
+    if isinstance(returnToken, bool) and returnToken == False:
+        return False, False, False, False
     #Add quantifiers to the TokenTree
-    returnToken = tokenizeQuantifiers(returnToken,quantifiers)
-    return (returnToken,addQuants,addAtomics,addFunctions)
-        
+    returnToken = tokenizeQuantifiers(returnToken, quantifiers)
+    return returnToken, addQuants, addAtomics, addFunctions
+
 if __name__ == "__main__":
-    '''
+    """
     Testing suite.
-    '''
-    inputin = raw_input("Enter an expression: ")
+    """
+    inputin = input("Enter an expression: ")
     #Make symbols into functions
     temp = removeComments(inputin)
-    print temp
+    print(temp)
     temp = functorizeSymbols(temp)
-    print temp
+    print(temp)
     #Strip comments
-    temp = cleaning.stripComments(temp)
-    print temp
+    temp = cleaning.strip_comments(temp)
+    print(temp)
     #Strip whitespace so you can do the rest of the parsing
-    temp = cleaning.stripWhiteSpace(temp)
-    print temp
+    temp = cleaning.strip_white_space(temp)
+    print(temp)
     #Tuck the functions inside thier parentheses
-    temp = cleaning.tuckFunctions(temp)
-    print temp
+    temp = cleaning.tuck_functions(temp)
+    print(temp)
     #Consolidate Parentheses
-    temp = cleaning.consolidateParens(temp)
-    print temp
+    temp = cleaning.consolidate_parens(temp)
+    print(temp)
     testNAMESPACE = prototypes.NAMESPACE()
-    testNAMESPACE.addBasicDCEC()
-    testNAMESPACE.addBasicNumerics()
-    testNAMESPACE.addBasicLogic()
-    testNAMESPACE.addTextFunction("ActionType heal Agent")
+    testNAMESPACE.add_basic_dcec()
+    testNAMESPACE.add_basic_numerics()
+    testNAMESPACE.add_basic_logic()
+    testNAMESPACE.add_text_function("ActionType heal Agent")
     #testNAMESPACE.addTextFunction("Boolean B Agent Moment Boolean Certainty")
     addQuants = {}
     addAtomics = {}
     addFunctions = {}     
-    tree,addQuants,addAtomics,addFunctions = tokenizeRandomDCEC(temp,testNAMESPACE)
-    if tree == False:
+    tree,addQuants,addAtomics,addFunctions = tokenizeRandomDCEC(temp, testNAMESPACE)
+    if tree is False:
         pass
-    elif isinstance(tree,str):
-        print tree
+    elif isinstance(tree, string_types):
+        print(tree)
     else:
         tree.printTree()
-        print tree.depthOf(),tree.widthOf(),addQuants,addAtomics,addFunctions
+        print(tree.depthOf(), tree.widthOf(), addQuants, addAtomics, addFunctions)
