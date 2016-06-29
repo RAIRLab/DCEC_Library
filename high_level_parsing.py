@@ -72,7 +72,7 @@ class Token:
                 self.s_expression += arg + " "
             else:
                 arg.create_s_expression()
-                self.s_expression += arg.Sexpression + " "
+                self.s_expression += arg.s_expression + " "
         self.s_expression = self.s_expression.strip()
         self.s_expression += ")"
         return self.s_expression
@@ -92,7 +92,7 @@ class Token:
                 self.f_expression += arg + ","
             else:
                 arg.create_f_expression()
-                self.f_expression += arg.Fexpression + ","
+                self.f_expression += arg.f_expression + ","
         self.f_expression = self.f_expression.strip(",")
         self.f_expression += ")"
         return self.f_expression
@@ -745,7 +745,7 @@ def token_tree(expression, namespace, quantifiers, add_quants, add_atomics, add_
         return False
     # Rip out quantified statements
     args, offset = pop_quantifiers(args, temp, sublevel, namespace, quantifiers, add_quants,
-                                   add_atomics, add_functions)
+                                   add_atomics)
     place += offset
     if isinstance(args, bool):
         return False

@@ -54,20 +54,20 @@ class DCECContainer:
         addee = statement
         if isinstance(addee, string_types):
             addee, addQuants, \
-            addAtomics, addFunctions = highLevelParsing.tokenizeRandomDCEC(addee, self.namespace)
+            addAtomics, addFunctions = high_level_parsing.tokenize_random_dcec(addee, self.namespace)
             if isinstance(addee,bool) and not addee:
                 print("ERROR: the statement " + str(statement) + " was not correctly formed.")
                 return False
             elif addee == "":
                 return True
-        elif isinstance(addee, highLevelParsing.Token):
+        elif isinstance(addee, high_level_parsing.Token):
             pass
         else:
             print("ERROR: the input " + str(statement) + " was not of the correct type.")
             return False
         for atomic in addAtomics.keys():
             # Tokens are not currently stored
-            if isinstance(atomic, highLevelParsing.Token):
+            if isinstance(atomic, high_level_parsing.Token):
                 continue
             for potentialtype in range(0, len(addAtomics[atomic])):
                 if (not self.namespace.no_conflict(addAtomics[atomic][0], addAtomics[atomic][potentialtype], 0)[0]) and (not self.namespace.no_conflict(
@@ -83,7 +83,7 @@ class DCECContainer:
                     self.namespace.add_code_function(function, item[0], item[1])
         for atomic in addAtomics.keys():
             # Tokens are not currently stored
-            if isinstance(atomic, highLevelParsing.Token):
+            if isinstance(atomic, high_level_parsing.Token):
                 continue
             elif atomic in self.namespace.atomics.keys():
                 if not self.namespace.no_conflict(self.namespace.atomics[atomic], addAtomics[atomic][0], 0)[0] and not self.namespace.no_conflict(
@@ -102,15 +102,14 @@ class DCECContainer:
             self.checkMap[addee] = addee
         return True
 
-
     def sortOf(self, statement):
         if isinstance(statement, string_types):
             return self.namespace.atomics.get(statement)
         if statement is None:
             return None
-        if not statement.funcName in self.namespace.functions.keys():           
+        if statement.function_name not in self.namespace.functions.keys():
             return None
-        tmpFunc = statement.funcName
+        tmpFunc = statement.function_name
         tmpArgs = statement.args
         tmpTypes = []
         for arg in tmpArgs:
@@ -137,9 +136,9 @@ class DCECContainer:
             return sorts
         if statement is None:
             return None
-        if statement.funcName not in self.namespace.functions.keys():
+        if statement.function_name not in self.namespace.functions.keys():
             return None
-        tmpFunc = statement.funcName
+        tmpFunc = statement.function_name
         tmpArgs = statement.args
         tmpTypes = []
         for arg in tmpArgs:
@@ -169,7 +168,7 @@ class DCECContainer:
                 self.stupidSortDefine(x, oldContainer)
             self.namespace.add_code_sort(sort, oldContainer.namespace.sorts[sort])
 
-    #TODO replace with iterator
+    # TODO replace with iterator
     def stupidLoop(self,token,functions,atomics, oldContainer):
         if isinstance(token, string_types):
             if oldContainer.sortOf(token) is None:
@@ -179,7 +178,7 @@ class DCECContainer:
                 self.stupidSortDefine(oldContainer.sortOf(token), oldContainer)
                 self.namespace.add_code_atomic(token, oldContainer.sortOf(token))
         else:
-            if token.funcName in ["forAll", "exists"]:
+            if token.function_name in ["forAll", "exists"]:
                 pass
             elif oldContainer.sortOf(token) is None:
                 argTypes = []
@@ -191,7 +190,7 @@ class DCECContainer:
                         self.stupidSortDefine(arg, oldContainer)
                     poss = []
                     map = {}
-                    for x in oldContainer.namespace.functions[token.funcName]:
+                    for x in oldContainer.namespace.functions[token.function_name]:
                         deep = 0
                         compat, depth = oldContainer.namespace.no_conflict(x[0], atomics[token][0], 0)
                         if not compat:
@@ -207,19 +206,19 @@ class DCECContainer:
                         poss.append(deep)
                         map[deep] = x
                     final = map[min(poss)]
-                    self.namespace.add_code_function(token.funcName, final[0], final[1])
+                    self.namespace.add_code_function(token.function_name, final[0], final[1])
                 else:
                     # This should never happen, but if it does make a new function
-                    for x in functions[token.funcName]:
+                    for x in functions[token.function_name]:
                         self.stupidSortDefine(x[0], oldContainer)
                         for y in x[1]:
                             self.stupidSortDefine(y, oldContainer)
-                        self.namespace.add_code_function(token.funcName, x[0], x[1])
+                        self.namespace.add_code_function(token.function_name, x[0], x[1])
             else:
                 self.stupidSortDefine(oldContainer.sortOf(token), oldContainer)
                 for x in oldContainer.sortsOfParams(token):
                     self.stupidSortDefine(x, oldContainer)
-                self.namespace.add_code_function(token.funcName, oldContainer.sortOf(token),
+                self.namespace.add_code_function(token.function_name, oldContainer.sortOf(token),
                                                  oldContainer.sortsOfParams(token))
             for arg in token.args:
                 self.stupidLoop(arg, functions, atomics, oldContainer)
@@ -228,7 +227,7 @@ class DCECContainer:
         if not isinstance(statement, string_types):
             return False
         dcec_container = DCECContainer()
-        stuff = highLevelParsing.tokenizeRandomDCEC(statement, self.namespace)
+        stuff = high_level_parsing.tokenize_random_dcec(statement, self.namespace)
         if isinstance(stuff[0], bool) and not stuff[0]:
             return False
         elif stuff[0] == "":
@@ -256,8 +255,8 @@ if __name__ == "__main__":
     new = test.tokenize(input("Enter an expression: "))
     #print new.statements[0].createSExpression(),new.namespace.atomics
     #test.save("TEST")
-    print(test.statements,test.namespace.atomics,test.namespace.functions)
-    print(new.statements,new.namespace.atomics,new.namespace.functions)
+    print(test.statements, test.namespace.atomics, test.namespace.functions)
+    print(new.statements, new.namespace.atomics, new.namespace.functions)
     #new.load("TEST")
     #print len(test.statements)
     for x in test.statements:
