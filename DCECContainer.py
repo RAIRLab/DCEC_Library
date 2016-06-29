@@ -3,7 +3,7 @@ import pickle
 from six import string_types
 from six.moves import input
 
-import highLevelParsing
+import high_level_parsing
 import prototypes
 
 
@@ -36,9 +36,9 @@ class DCECContainer:
         if isinstance(statement, string_types):
             return statement
         if expression_type == "S":
-            temp = statement.createSExpression()
+            temp = statement.create_s_expression()
         elif expression_type == "F":
-            temp = statement.createFExpression()
+            temp = statement.create_f_expression()
         else:
             print("ERROR: invalid notation type")
             return False
@@ -97,7 +97,7 @@ class DCECContainer:
                 self.namespace.quant_map[quant] = addQuants[quant]
         self.statements.append(addee)
         if not isinstance(addee,str):
-            self.checkMap[addee.createSExpression()] = addee
+            self.checkMap[addee.create_s_expression()] = addee
         else:
             self.checkMap[addee] = addee
         return True
