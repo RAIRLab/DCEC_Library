@@ -14,4 +14,4 @@ script:
   - echo -e "holds(test,t1)" | python high_level_parsing.py
   - echo -e "Agent james" | python prototypes.py
   - python cleaning.py
-  - echo -e "implies(kind(james),help(james))\nimplies(kind(james),help(james))" | python DCECContainer.py
+  - echo -e "implies(kind(james),help(james))\nimplies(kind(james),help(james))" | python dcec_container.py
