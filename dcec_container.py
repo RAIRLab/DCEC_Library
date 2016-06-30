@@ -3,8 +3,14 @@ import pickle
 from six import string_types
 from six.moves import input
 
-import high_level_parsing
-import prototypes
+# We need to use the first type of import if running this script directly and the second type of
+# import if we're using it in a package (such as for within Talos)
+try:
+    import high_level_parsing
+    import prototypes
+except ImportError:
+    import DCEC_Library.high_level_parsing as high_level_parsing
+    import DCEC_Library.prototypes as prototypes
 
 
 class DCECContainer:

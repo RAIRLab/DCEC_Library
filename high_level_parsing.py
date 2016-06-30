@@ -2,8 +2,14 @@ from __future__ import print_function
 from six import string_types
 from six.moves import input  # pylint: disable=locally-disabled,redefined-builtin
 
-import prototypes
-import cleaning
+# We need to use the first type of import if running this script directly and the second type of
+# import if we're using it in a package (such as for within Talos)
+try:
+    import prototypes
+    import cleaning
+except ImportError:
+    import DCEC_Library.prototypes as prototypes
+    import DCEC_Library.cleaning as cleaning
 
 
 class Token:
