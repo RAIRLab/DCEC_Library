@@ -21,10 +21,10 @@ class Token:
     def __init__(self, funcname, args):
         self.function_name = funcname
         self.args = args
-        self.depth = 2
-        self.width = ""
-        self.s_expression = ""
-        self.f_expression = ""
+        self.depth = None
+        self.width = None
+        self.s_expression = None
+        self.f_expression = None
 
     def depth_of(self):
         """
@@ -33,8 +33,6 @@ class Token:
 
         :return: max depth of token
         """
-        if self.depth != "":
-            return self.depth
         temp = []
         for arg in self.args:
             if isinstance(arg, Token):
@@ -52,8 +50,6 @@ class Token:
 
         :return: width of token
         """
-        if self.width != "":
-            return self.width
         temp = 0
         for arg in self.args:
             if isinstance(arg, string_types):
@@ -70,8 +66,6 @@ class Token:
 
         :return: S expression representing this token
         """
-        if self.s_expression != "":
-            return self.s_expression
         self.s_expression = "(" + self.function_name + " "
         for arg in self.args:
             if isinstance(arg, string_types):
@@ -90,8 +84,6 @@ class Token:
 
         :return: F expression representing this token
         """
-        if self.f_expression != "":
-            return self.f_expression
         self.f_expression = self.function_name + "("
         for arg in self.args:
             if isinstance(arg, string_types):
@@ -166,6 +158,23 @@ def replace_synonyms(args):
     """
     These are some common spelling errors that users demand the parser takes
     care of, even though it increases "shot-in-foot" syndrome.
+
+    >>> replace_synonyms(["ifAndOnlyIf", "if", "iff", "Time", "forall", "Forall", "ForAll", \
+    "Exists"])
+    WARNING: replaced the common mispelling ifAndOnlyIf with the correct name of iff
+    WARNING: replaced the common mispelling if with the correct name of implies
+    WARNING: replaced the common mispelling Time with the correct name of Moment
+    WARNING: replaced the common mispelling forall with the correct name of forAll
+    WARNING: replaced the common mispelling Forall with the correct name of forAll
+    WARNING: replaced the common mispelling ForAll with the correct name of forAll
+    WARNING: replaced the common mispelling Exists with the correct name of exists
+    ['iff', 'implies', 'iff', 'Moment', 'forAll', 'forAll', 'forAll', 'exists']
+    >>> replace_synonyms("if")
+    WARNING: replaced the common mispelling if with the correct name of implies
+    'implies'
+
+    :param args: either a list of arguments to convert or a string to convert based on synomyn map
+    :return: parsed args that has all common mispellings replaced
     """
     synonym_map = {
         "ifAndOnlyIf": "iff",
@@ -176,12 +185,20 @@ def replace_synonyms(args):
         "ForAll": "forAll",
         "Exists": "exists",
     }
-    for arg in range(0, len(args)):
-        if args[arg] in synonym_map.keys():
-            print("WARNING: replaced the common mispelling " + args[arg] + " with the correct "
-                  "name of " + synonym_map[args[arg]])
-            args[arg] = synonym_map[args[arg]]
-    return
+    if not isinstance(args, list):
+        args = str(args)
+        if args in synonym_map:
+            print("WARNING: replaced the common mispelling %s with the correct name of %s" %
+                  (args, synonym_map[args]))
+            args = synonym_map[args]
+    else:
+        args = [str(arg) for arg in args]
+        for arg in range(0, len(args)):
+            if args[arg] in synonym_map:
+                print("WARNING: replaced the common mispelling %s with the correct "
+                      "name of %s" % (args[arg], synonym_map[args[arg]]))
+                args[arg] = synonym_map[args[arg]]
+    return args
 
 
 def prefix_logical_functions(args, add_atomics):
@@ -240,7 +257,7 @@ def prefix_logical_functions(args, add_atomics):
     return args
 
 
-def prefix_emdas(args, addAtomics):
+def prefix_emdas(args, add_atomics):
     """
     This function turns infix notation into a tokenized prefix notation using the standard
     PEMDAS order of operations.
@@ -260,10 +277,10 @@ def prefix_emdas(args, addAtomics):
             if word == "negate":
                 new_token = Token(word, [args[index+1]])
                 # Assign sorts to the atomics used
-                if args[index+1] in addAtomics.keys():
-                    addAtomics[args[index+1]].append("Numeric")
+                if args[index+1] in add_atomics.keys():
+                    add_atomics[args[index + 1]].append("Numeric")
                 else:
-                    addAtomics[args[index+1]] = ["Numeric"]
+                    add_atomics[args[index + 1]] = ["Numeric"]
                 # Replace infix notation with tokenized representation
                 args = args[:index+1]+args[index+2:]
                 args[index] = new_token
@@ -276,14 +293,14 @@ def prefix_emdas(args, addAtomics):
             # Tucks the arithmetic expression into a token
             new_token = Token(word, [args[in1], args[in2]])
             # Assign sorts to the atomics used
-            if args[in1] in addAtomics.keys():
-                addAtomics[args[in1]].append("Numeric")
+            if args[in1] in add_atomics.keys():
+                add_atomics[args[in1]].append("Numeric")
             else:
-                addAtomics[args[in1]] = ["Numeric"]
-            if args[in2] in addAtomics.keys():
-                addAtomics[args[in2]].append("Numeric")
+                add_atomics[args[in1]] = ["Numeric"]
+            if args[in2] in add_atomics.keys():
+                add_atomics[args[in2]].append("Numeric")
             else:
-                addAtomics[args[in2]] = ["Numeric"]
+                add_atomics[args[in2]] = ["Numeric"]
             # Replace the args used in the token with the token
             args = args[:in1] + args[in2:]
             args[in1] = new_token
@@ -917,6 +934,9 @@ def tokenize_random_dcec(expression, namespace=None):
     return return_token, add_quants, add_atomics, add_functions
 
 if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+
     # pylint: disable=invalid-name
     inputin = input("Enter an expression: ")
     # Make symbols into functions

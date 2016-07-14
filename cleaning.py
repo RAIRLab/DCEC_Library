@@ -1,17 +1,30 @@
 """
-Functions based around cleaning up expressions given in string format
+Functions based around manipulating and parsing expressions as they come into the DCEC_Library
 """
 
 
 def tuck_functions(expression):
     """
-    This function returns a string with all function calls of the form B(args)
-    transformed into calls of the form (`B` args). This makes it easier to keep
-    tokens on the same level.
+    This function given an expression in functional form moves the function inside its
+    paranthesises putting a comma between the function name and its arguments. The function
+    names "not" and "negate" are treated specially in that we will surround the functions
+    arguments with parathesises in addition to the normal behavior.
 
-    :param expression:
-    :return:
+    >>> tuck_functions("B(args)")
+    '(B,args)'
+    >>> tuck_functions("B(C(arg1 arg2))")
+    '(B,(C,arg1 arg2))'
+    >>> tuck_functions("not(A)")
+    '(not,(A))'
+    >>> tuck_functions("negate(A)")
+    '(negate,(A))'
+    >>> tuck_functions("not(negate(A))")
+    '(not,((negate,(A))))'
+
+    :param expression: expression to parse
+    :return: the transformed expression
     """
+    expression = str(expression)
     first_paren = 0
     new_index = 0
     temp = ""
@@ -56,9 +69,13 @@ def strip_white_space(expression):
     seperated by whitespace or commas into arguments seperated by commas.
     Note- Commas are treated as whitespace
 
+    >>> strip_white_space("(a  b  c)")
+    '(a,b,c)'
+
     :param expression:
     :return:
     """
+    expression = str(expression)
     # Strip the whitespace around the function
     temp = expression.strip()
     # [ Have special notation, they are bracket-ish
@@ -85,10 +102,19 @@ def strip_white_space(expression):
 
 def strip_comments(expression):
     """
-    Given an expression,
-    :param expression:
-    :return:
+    Given an expression, strips out any comments from the expression. We search for the first
+    instance of the '#' character and then strip out that character and everything following. If
+    the '#' character is not found, then there is no change to the string
+
+    >>> strip_comments("abcd#efgh")
+    'abcd'
+    >>> strip_comments("abcd")
+    'abcd'
+
+    :param expression: expression to parse
+    :return: parsed expression
     """
+    expression = str(expression)
     place = expression.find("#")
     if place == -1:
         return expression
@@ -98,13 +124,14 @@ def strip_comments(expression):
 
 def consolidate_parens(expression):
     """
-    Returns a string identical to the input except all superfluous parens are
-    removed. It will also put parens around the outside of the expression, if it
-    does not already have them. It will not detect a paren mismatch error.
+    Returns a string identical to the input except all superfluous parens are removed. It will also
+    put parens around the outside of the expression, if it does not already have them. It will not
+    detect a paren mismatch error.
 
     :param expression:
     :return:
     """
+    expression = str(expression)
     temp = "(" + expression + ")"
     # list of indexes to delete
     delete_list = []
@@ -141,9 +168,19 @@ def check_parens(expression):
     It returns true if there are an equal amount of left and right parentheses, and false if
     there are not.
 
+    >>> check_parens("")
+    True
+    >>> check_parens("abc")
+    True
+    >>> check_parens("(a(b(c)))")
+    True
+    >>> check_parens("(a(b(c))")
+    False
+
     :param expression:
     :return: boolean on whether equal amount of parentheses
     """
+    expression = str(expression)
     return expression.count("(") == expression.count(")")
 
 
@@ -152,10 +189,18 @@ def get_matching_close_paren(input_str, open_paren_index=0):
     Given a string, parse through it to find the index of the closing parenthesis that matches
     the open parentheses given at some index
 
+    >>> get_matching_close_paren("(a b c)")
+    6
+    >>> get_matching_close_paren("(a (b) c)")
+    8
+    >>> get_matching_close_paren("(a (b) c)", 3)
+    5
+
     :param input_str:
     :param open_paren_index:
     :return:
     """
+    expression = str(input_str)
     paren_counter = 1
     current_index = open_paren_index
     if current_index == -1:
@@ -172,3 +217,7 @@ def get_matching_close_paren(input_str, open_paren_index=0):
         else:
             return False
     return current_index
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
