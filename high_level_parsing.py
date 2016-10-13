@@ -895,7 +895,7 @@ def tokenize_random_dcec(expression, namespace=None):
     """
     # Default DCEC Functions
     if namespace is None:
-        namespace = prototypes.NAMESPACE()
+        namespace = prototypes.Namespace()
         namespace.add_basic_dcec()
     else:
         namespace = namespace
@@ -956,7 +956,7 @@ if __name__ == "__main__":
     # Consolidate Parentheses
     inputin = cleaning.consolidate_parens(inputin)
     print(inputin)
-    test_namespace = prototypes.NAMESPACE()
+    test_namespace = prototypes.Namespace()
     test_namespace.add_basic_dcec()
     test_namespace.add_basic_numerics()
     test_namespace.add_basic_logic()

@@ -200,7 +200,6 @@ def get_matching_close_paren(input_str, open_paren_index=0):
     :param open_paren_index:
     :return:
     """
-    expression = str(input_str)
     paren_counter = 1
     current_index = open_paren_index
     if current_index == -1:
@@ -219,5 +218,6 @@ def get_matching_close_paren(input_str, open_paren_index=0):
     return current_index
 
 if __name__ == "__main__":
+    # pylint: disable=wrong-import-position
     import doctest
     doctest.testmod()

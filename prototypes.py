@@ -13,7 +13,19 @@ try:
 except ImportError:
     import DCEC_Library.cleaning as cleaning
 
-class NAMESPACE:
+
+class Namespace:
+    """
+
+    >>> namespace = Namespace()
+    >>> namespace.add_basic_dcec()
+    >>> namespace.add_basic_logic()
+    >>> namespace.add_text_function("typedef Greeting Action")
+    >>> namespace.add_text_function("Greeting hello Agent")
+    True
+    >>> namespace.add_text_function("Boolean greet Agent Greeting")
+    True
+    """
     def __init__(self):
         self.functions = {}
         self.atomics = {}
@@ -21,6 +33,13 @@ class NAMESPACE:
         self.quant_map = {"TEMP": 0}
 
     def add_code_sort(self, name, inheritance=None):
+        """
+        Add a new sort to the namespace
+
+        :param name:
+        :param inheritance:
+        :return:
+        """
         if inheritance is None:
             inheritance = []
         if not (isinstance(name, string_types) and isinstance(inheritance, list)):
@@ -37,6 +56,11 @@ class NAMESPACE:
         return True
 
     def add_text_sort(self, expression):
+        """
+
+        :param expression:
+        :return:
+        """
         temp = expression.replace("(", " ")
         temp = temp.replace(")", " ")
         temp = cleaning.strip_white_space(temp)
@@ -51,10 +75,22 @@ class NAMESPACE:
             return False
 
     def find_atomic_type(self, name):
+        """
+
+        :param name:
+        :return:
+        """
         if name in self.atomics.keys():
             return self.atomics[name]
 
     def add_code_function(self, name, return_type, args_types):
+        """
+
+        :param name:
+        :param return_type:
+        :param args_types:
+        :return:
+        """
         item = [return_type, args_types]
         if name in self.functions.keys():
             if item in self.functions[name]:
@@ -66,6 +102,11 @@ class NAMESPACE:
         return True
 
     def add_text_function(self, expression):
+        """
+
+        :param expression:
+        :return:
+        """
         temp = expression.replace("(", " ")
         temp = temp.replace(")", " ")
         temp = cleaning.strip_white_space(temp)
@@ -100,6 +141,12 @@ class NAMESPACE:
         return self.add_code_function(func_name, return_type, func_args)
 
     def add_code_atomic(self, name, atomic):
+        """
+
+        :param name:
+        :param atomic:
+        :return:
+        """
         if name in self.atomics.keys():
             if atomic in self.atomics[name]:
                 return True
@@ -113,6 +160,11 @@ class NAMESPACE:
         return True
 
     def add_text_atomic(self, expression):
+        """
+
+        :param expression:
+        :return:
+        """
         temp = expression.replace("(", " ")
         temp = temp.replace(")", " ")
         temp = cleaning.strip_white_space(temp)
@@ -135,6 +187,9 @@ class NAMESPACE:
         return self.add_code_atomic(func_name, return_type)
 
     def add_basic_dcec(self):
+        """
+        This adds the DCEC* sorts and functions to the current namespace
+        """
         # The Basic DCEC Sorts
         self.add_code_sort("Object")
         self.add_code_sort("Agent", ["Object"])
@@ -171,21 +226,26 @@ class NAMESPACE:
         self.add_code_function("self", "Self", ["Agent"])
         self.add_code_function("payoff", "Numeric", ["Agent", "ActionType", "Moment"])
 
+        # Time Functions
+        self.add_code_function("lessOrEqual", "Boolean", ["Moment", "Moment"])
+
+    def add_basic_logic(self):
+        """
+        Adds some basic logic operators to the namespace
+        """
         # Logical Functions
         self.add_code_function("implies", "Boolean", ["Boolean", "Boolean"])
         self.add_code_function("iff", "Boolean", ["Boolean", "Boolean"])
         self.add_code_function("not", "Boolean", ["Boolean"])
         self.add_code_function("and", "Boolean", ["Boolean", "Boolean"])
-
-        # Time Functions
-        self.add_code_function("lessOrEqual", "Boolean", ["Moment", "Moment"])
-
-    def add_basic_logic(self):
-        # Logical Functions
         self.add_code_function("or", "Boolean", ["Boolean", "Boolean"])
         self.add_code_function("xor", "Boolean", ["Boolean", "Boolean"])
 
     def add_basic_numerics(self):
+        """
+        Adds some functions for use for numerics. However, you still need to define
+        each number you might want to use explicitly before you could use it.
+        """
         # Numerical Functions
         self.add_code_function("negate", "Numeric", ["Numeric"])
         self.add_code_function("add", "Numeric", ["Numeric", "Numeric"])
@@ -220,6 +280,9 @@ class NAMESPACE:
                 return False, level
 
     def print_namespace(self):
+        """
+        Outputs the current namespace and it's various sorts, functions, and atomics
+        """
         for item in self.sorts.keys():
             print(item, self.sorts[item])
         for item in self.functions:
@@ -227,10 +290,7 @@ class NAMESPACE:
         for item in self.atomics:
             print(item, self.atomics[item])
 
-
 if __name__ == "__main__":
-    THIS = NAMESPACE()
-    EXPRESSION = input("Enter Prototype: ")
-    THIS.add_text_function(EXPRESSION)
-    THIS.add_basic_dcec()
-    THIS.print_namespace()
+    # pylint: disable=wrong-import-position
+    import doctest
+    doctest.testmod()
